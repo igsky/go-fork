@@ -14,7 +14,7 @@ import (
 	"gopkg.in/libgit2/git2go.v24"
 )
 
-var oldRepo, newRepo string
+var oldRepo, newRepo, path string
 var step int
 
 func failOnError(err error, msg string) {
@@ -39,7 +39,7 @@ func visit(path string, file os.FileInfo, err error) error {
 	for _, i := range f.Imports {
 		if !imports.Valid(i.Path.Value) { //Pass invalid imports
 			continue
-		} else if strings.HasPrefix(i.Path.Value, `"`+oldRepo) {
+		} else if strings.HasPrefix(i.Path.Value, `"` + oldRepo) {
 			matchedImports = append(matchedImports, i)
 		}
 	}
@@ -56,7 +56,6 @@ func visit(path string, file os.FileInfo, err error) error {
 		s := int(v.Path.ValuePos) + offset
 		f := s + len(v.Path.Value) - 2
 		text = text[:s] + strings.Replace(text[s:f], oldRepo, newRepo, 1) + text[f:]
-
 		offset += step
 	}
 
@@ -68,10 +67,7 @@ func visit(path string, file os.FileInfo, err error) error {
 	return nil
 }
 
-func main() {
-	var path string
-	var err error
-
+func init() {
 	flag.Parse()
 	if len(flag.Args()) == 3 {
 		path = flag.Arg(0)
@@ -87,6 +83,10 @@ func main() {
 	} else {
 		log.Fatalln("Invalid args count")
 	}
+}
+
+func main() {
+	var err error
 
 	// set char offset step
 	step = len(newRepo) - len(oldRepo)
@@ -100,7 +100,7 @@ func main() {
 	url, err := config.LookupString("remote.origin.url")
 	failOnError(err, "Failed to load repository url")
 
-	// log url
+	// log repo url
 	log.Println(url)
 
 	err = filepath.Walk(path, visit)
